@@ -19,20 +19,25 @@ $\ = "\n";
 
 print "Content-type: text/html\n\n";
 
-my ($location, $is_web_request) = get_location();
+my $is_web_request = is_web_request();
+my $location = get_location($is_web_request);
 my $weather = get_weather($location);
 my $is_rain = is_rain_next_hour($weather);
 
 print to_json( { "rain" => "$is_rain" } ) if $is_web_request;
+print "Yes, it will rain in the next hour" if $debug && $is_rain;
+
+sub is_web_request {
+    return (parse_query_string() ? 1 : 0);
+}
 
 # Get latitude and longitude
 sub get_location {
+    my $is_web_request = shift @_;
     my %query;
-    my $is_web_request;
 
-    if (%query = parse_query_string()) {
-        $is_web_request = 1;
-
+    if ($is_web_request) {
+        %query = parse_query_string();
         if ( !looks_like_number($query{lat}) || !looks_like_number($query{lon}) ) {
             print to_json( { "error" => "invalid latitude/longitude" });
             die "Invalid location ($query{lat}/$query{lon})";
@@ -40,11 +45,10 @@ sub get_location {
     }
     else {
         (($query{lat}, $query{lon}) = @ARGV) || die "Incorrect arguments";
-        $is_web_request = 0;
     }
     my $location = "$query{lat},$query{lon}";
 
-    return ($location, $is_web_request);
+    return $location;
 }
 
 # Get some weather data
@@ -66,7 +70,7 @@ sub get_weather {
 
     # check that the response contains hyperlocal weather data
     if (!defined $weather->{minutely}->{data}) {
-        print to_json( { "error" => "unable to get hyperlocal forecast - perhaps your area is not yet supported?" } );
+        print to_json( { "error" => "Unable to get hyperlocal forecast - perhaps your area is not yet supported?" } );
         die "Can't get hyperlocal forecast data from response";
     }
 
@@ -79,7 +83,7 @@ sub is_rain_next_hour {
 
     my $is_rain = 0;
     foreach my $minute (@{$weather->{minutely}->{data}}) {
-        print "<br>data: " . $minute->{time} . " at " . $minute->{precipIntensity} if $debug;
+        print "<br>data: " . $minute->{time} . " at " . $minute->{precipIntensity} if $debug == 2;
         if ($minute->{precipIntensity} > 0 && !$is_rain) {
             print "<br>Yes. It will rain at " . scalar localtime($minute->{time}) . "<br>" if $debug;
             $is_rain = 1;
