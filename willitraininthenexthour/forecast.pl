@@ -4,6 +4,7 @@ use warnings;
 use strict;
 
 use Data::Dumper;
+use DateTime;
 use IO::Socket::SSL;
 use JSON;
 use Mojo::UserAgent;
@@ -91,6 +92,42 @@ sub is_rain_next_hour {
     }
 
     return $is_rain;
+}
+
+sub get_weather_at_hour {
+    my $weather = shift @_;
+    my $target_hour = shift @_;
+    my $target_epoch = hour_to_epoch($target_hour);
+
+    foreach my $hour (@{$weather->{hourly}->{data}}) {
+        print "found " . $hour->{time} . ": precip is ". $hour->{precipIntensity} . " (" . $hour->{summary} . ")"
+            if $hour->{time} == $target_epoch;
+        return ($hour->{precipIntensity}, $hour->{summary})
+            if $hour->{time} == $target_epoch;
+    }
+}
+
+# Convert integer hour to unix epoch timestamp
+# eg 17 -> 17:00 today
+# will return a timestamp for tomorrow if input hour has already passed
+sub hour_to_epoch {
+    my $target_hour = shift @_;
+
+    # DateTime handles BST. Phew!
+    my $timezone = 'Europe/London';
+    my $dt = DateTime->now( time_zone => $timezone );
+
+    # You probably mean for tomorrow
+    if ($target_hour < $dt->hour) {
+        $dt->add( days => 1 );
+    }
+
+    # Set time to the target hour
+    $dt->set_hour($target_hour);
+    $dt->set_minute(0);
+    $dt->set_second(0);
+
+    return $dt->epoch;
 }
 
 # feels like there should be a builtin for this...
