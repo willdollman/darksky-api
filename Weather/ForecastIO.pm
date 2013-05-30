@@ -15,7 +15,7 @@ use Mojo::UserAgent;
 use Readonly;
 use Scalar::Util qw(looks_like_number);
 
-our @EXPORT_OK = qw( is_web_request get_location get_weather is_rain_next_hour get_weather_at_hour hour_to_epoch parse_query_string );
+our @EXPORT_OK = qw( is_web_request get_location get_weather is_rain_next_hour get_weather_at_hour parse_query_string get_hourly_summary );
 
 # Quick config
 Readonly my $DEBUG => 1; # show debug messages
@@ -101,13 +101,18 @@ sub get_weather_at_hour {
     my $target_epoch = hour_to_epoch($target_hour);
 
     foreach my $hour (@{$weather->{hourly}->{data}}) {
-        print "found " . $hour->{time} . ": precip is ". $hour->{precipIntensity} . " (" . $hour->{summary} . ")"
-            if $hour->{time} == $target_epoch;
         return ($hour->{precipIntensity}, $hour->{summary})
             if $hour->{time} == $target_epoch;
     }
     carp "Could not find $target_hour in response";
     return (-1, -1);
+}
+
+# return hourly summary (scope is next 24 hours)
+sub get_hourly_summary {
+    my $weather = shift @_;
+
+    return $weather->{hourly}->{summary};
 }
 
 # Convert integer hour to unix epoch timestamp
