@@ -18,7 +18,7 @@ use Scalar::Util qw(looks_like_number);
 our @EXPORT_OK = qw( is_web_request get_location get_weather is_rain_next_hour get_weather_at_hour parse_query_string get_hourly_summary );
 
 # Quick config
-Readonly my $DEBUG => 1; # show debug messages
+Readonly my $DEBUG => 0; # show debug messages
 $\ = "\n";
 
 # could use an error-printing function which croaks/returns json based on is_web_request
@@ -67,7 +67,7 @@ sub get_weather {
         print "[fetching from darksky]" if $DEBUG;
         my $ua = Mojo::UserAgent->new;
         $weather = $ua->get('https://api.forecast.io/forecast/' . $api_key . '/' . $location)->res->json;
-        print "location is $location\n";
+        print "location is $location" if $DEBUG;
     }
 
     # check that the response contains hyperlocal weather data
