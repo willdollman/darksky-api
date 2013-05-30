@@ -24,7 +24,7 @@ $\ = "\n";
 # could use an error-printing function which croaks/returns json based on is_web_request
 
 sub is_web_request {
-    return (parse_query_string() ? 1 : 0);
+    return ( (defined $ENV{'QUERY_STRING'}) ? 1 : 0);
 }
 
 # Get latitude and longitude
@@ -56,6 +56,8 @@ sub get_weather {
     my $location = shift @_ || croak "No location supplied";
     my $api_key  = shift @_ || croak "No API key supplied";
     my $local_file = shift @_;
+
+    croak "Invalid API key" if (length $api_key != 32);
 
     my $weather;
     if ($local_file) {
