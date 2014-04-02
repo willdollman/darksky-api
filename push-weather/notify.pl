@@ -63,6 +63,4 @@ sub send_notification {
             message => $message,
         }
     );
-
-    print "$title: $message";
 }
